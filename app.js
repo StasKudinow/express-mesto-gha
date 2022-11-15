@@ -19,13 +19,13 @@ app.use((req, res, next) => {
   next();
 });
 
-app.all('/404', (req, res, next) => {
+app.use('/', require('./routes/users'));
+app.use('/', require('./routes/cards'));
+
+app.all('*', (req, res, next) => {
   res.status(ERROR_NOT_FOUND).send({ message: 'Страница не найдена' });
   next();
 });
-
-app.use('/', require('./routes/users'));
-app.use('/', require('./routes/cards'));
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console

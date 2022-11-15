@@ -31,7 +31,7 @@ module.exports.postUser = (req, res) => {
   User.create({ name, about, avatar })
     .then((data) => res.send(data))
     .catch((err) => {
-      if (err.name === 'ValidationError' || req.user._id.length !== 24) {
+      if (err.name === 'ValidationError') {
         return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
       }
       return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
