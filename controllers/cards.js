@@ -28,6 +28,9 @@ module.exports.deleteCardById = (req, res) => {
     })
     .then((data) => res.send(data))
     .catch((err) => {
+      if (err.name === 'ValidationError' || req.user._id.length !== 24) {
+        return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
+      }
       if (err.name === 'NotFoundError' || req.params.userId !== req.user._id) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемая карточка не найдена' });
       }
@@ -48,9 +51,9 @@ module.exports.likeCard = (req, res) => {
     })
     .then((data) => res.send(data))
     .catch((err) => {
-      if (err.name === 'ValidationError' || req.user._id.length !== 24) {
+      if (err.name === 'ValidationError' || req.params.cardId !== 24) {
         return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
-      } if (err.name === 'NotFoundError' || req.params.userId !== req.user._id) {
+      } if (err.name === 'NotFoundError' || req.params.userId === 24) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемая карточка не найдена' });
       }
       return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });

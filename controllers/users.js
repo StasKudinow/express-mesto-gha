@@ -9,9 +9,17 @@ module.exports.getUsers = (req, res) => {
 
 module.exports.getUserById = (req, res) => {
   User.findById(req.params.userId)
+    .orFail(() => {
+      const error = new Error();
+      error.statusCode = ERROR_NOT_FOUND;
+      throw error;
+    })
     .then((data) => res.send(data))
     .catch((err) => {
-      if (err.name === 'NotFoundError' || req.params.userId !== req.user._id) {
+      if (err.name === 'ValidationError' || req.params.userId.length !== 24) {
+        return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
+      }
+      if (err.name === 'NotFoundError' || req.params.userId.length === 24) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемый пользователь не найден' });
       }
       return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
@@ -23,7 +31,7 @@ module.exports.postUser = (req, res) => {
   User.create({ name, about, avatar })
     .then((data) => res.send(data))
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err.name === 'ValidationError' || req.user._id.length !== 24) {
         return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
       }
       return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
