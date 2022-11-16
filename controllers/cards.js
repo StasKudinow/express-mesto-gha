@@ -3,7 +3,6 @@ const { ERROR_SERVER, ERROR_VALIDATION, ERROR_NOT_FOUND } = require('../utils/co
 
 module.exports.getCards = (req, res) => {
   Card.find({})
-    .populate(['owner', 'likes'])
     .then((data) => res.send(data))
     .catch(() => res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' }));
 };
@@ -22,7 +21,6 @@ module.exports.postCard = (req, res) => {
 
 module.exports.deleteCardById = (req, res) => {
   Card.findByIdAndRemove(req.params.cardId)
-    .populate(['owner', 'likes'])
     .orFail(() => {
       const error = new Error();
       error.statusCode = ERROR_NOT_FOUND;
@@ -31,9 +29,9 @@ module.exports.deleteCardById = (req, res) => {
     .then((data) => res.send(data))
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
+        return res.status(ERROR_VALIDATION).send({ message: 'Передан некорректный id карточки' });
       }
-      if (err.name === 'NotFoundError' || err.name !== 'CastError') {
+      if (err.statusCode === ERROR_NOT_FOUND) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемая карточка не найдена' });
       }
       return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
@@ -46,7 +44,6 @@ module.exports.likeCard = (req, res) => {
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
-    .populate(['owner', 'likes'])
     .orFail(() => {
       const error = new Error();
       error.statusCode = ERROR_NOT_FOUND;
@@ -55,8 +52,8 @@ module.exports.likeCard = (req, res) => {
     .then((data) => res.send(data))
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
-      } if (err.name === 'NotFoundError' || err.name !== 'CastError') {
+        return res.status(ERROR_VALIDATION).send({ message: 'Передан некорректный id карточки' });
+      } if (err.statusCode === ERROR_NOT_FOUND) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемая карточка не найдена' });
       }
       return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
@@ -69,7 +66,6 @@ module.exports.dislikeCard = (req, res) => {
     { $pull: { likes: req.user._id } },
     { new: true },
   )
-    .populate(['owner', 'likes'])
     .orFail(() => {
       const error = new Error();
       error.statusCode = ERROR_NOT_FOUND;
@@ -78,8 +74,8 @@ module.exports.dislikeCard = (req, res) => {
     .then((data) => res.send(data))
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
-      } if (err.name === 'NotFoundError' || err.name !== 'CastError') {
+        return res.status(ERROR_VALIDATION).send({ message: 'Передан некорректный id карточки' });
+      } if (err.statusCode === ERROR_NOT_FOUND) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемая карточка не найдена' });
       }
       return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });

@@ -17,9 +17,9 @@ module.exports.getUserById = (req, res) => {
     .then((data) => res.send(data))
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
+        return res.status(ERROR_VALIDATION).send({ message: 'Передан некорректный id пользователя' });
       }
-      if (err.name === 'NotFoundError' || err.name !== 'CastError') {
+      if (err.statusCode === ERROR_NOT_FOUND) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемый пользователь не найден' });
       }
       return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
@@ -57,7 +57,7 @@ module.exports.updateUser = (req, res) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
-      } if (err.name === 'NotFoundError' || err.name !== 'ValidationError') {
+      } if (err.statusCode === ERROR_NOT_FOUND) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемый пользователь не найден' });
       }
       return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
@@ -83,7 +83,7 @@ module.exports.updateAvatar = (req, res) => {
     .catch((err) => {
       if (err.name === 'ValidationError') {
         return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
-      } if (err.name === 'NotFoundError' || err.name !== 'ValidationError') {
+      } if (err.statusCode === ERROR_NOT_FOUND) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемый пользователь не найден' });
       }
       return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
