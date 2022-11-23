@@ -55,7 +55,7 @@ module.exports.postUser = (req, res) => {
       password: hash,
     }))
     .then((user) => {
-      if (user) {
+      if (!user) {
         return Promise.reject(new Error());
       }
       return res.send(user);
