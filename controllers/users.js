@@ -8,6 +8,7 @@ const {
   ERROR_VALIDATION,
   ERROR_NOT_FOUND,
   ERROR_AUTH,
+  ERROR_CONFLICT,
   SALT_ROUND,
 } = require('../utils/constants');
 
@@ -53,12 +54,14 @@ module.exports.postUser = (req, res) => {
       email,
       password: hash,
     }))
-    .then((data) => res.send(data))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
+    .then((user) => {
+      if (user) {
+        return Promise.reject(new Error());
       }
-      return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
+      return res.send(user);
+    })
+    .catch(() => {
+      res.status(ERROR_CONFLICT).send({ message: 'Пользователь с переданным email уже существует' });
     });
 };
 
@@ -125,7 +128,7 @@ module.exports.login = (req, res) => {
       );
       res.send({ token });
     })
-    .catch((err) => {
-      res.status(ERROR_AUTH).send({ message: err.message });
+    .catch(() => {
+      res.status(ERROR_AUTH).send({ message: 'Неправильные почта или пароль' });
     });
 };
