@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
 const {
+  STATUS_CREATED,
   ERROR_SERVER,
   ERROR_VALIDATION,
   ERROR_NOT_FOUND,
@@ -45,12 +46,21 @@ module.exports.getUserById = (req, res) => {
 };
 
 module.exports.postUser = (req, res) => {
-  const { email, password } = req.body;
-  if (!validator.isEmail(email)) {
-    return res.status(ERROR_VALIDATION).send({ message: 'Переданан некорректный email' });
+  const {
+    name,
+    about,
+    avatar,
+    email,
+    password,
+  } = req.body;
+  if (!validator.isEmail(email) || !password) {
+    return res.status(ERROR_VALIDATION).send({ message: 'Переданан некорректный email или пароль' });
   }
   return bcrypt.hash(password, SALT_ROUND)
     .then((hash) => User.create({
+      name,
+      about,
+      avatar,
       email,
       password: hash,
     }))
@@ -58,7 +68,13 @@ module.exports.postUser = (req, res) => {
       if (!user) {
         return Promise.reject(new Error());
       }
-      return res.send(user);
+      return res.status(STATUS_CREATED).send({
+        _id: user._id,
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        email: user.email,
+      });
     })
     .catch(() => {
       res.status(ERROR_CONFLICT).send({ message: 'Пользователь с переданным email уже существует' });
