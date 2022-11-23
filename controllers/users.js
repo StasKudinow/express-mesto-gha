@@ -1,8 +1,25 @@
+const bcrypt = require('bcryptjs');
+const validator = require('validator');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
-const { ERROR_SERVER, ERROR_VALIDATION, ERROR_NOT_FOUND } = require('../utils/constants');
+
+const {
+  ERROR_SERVER,
+  ERROR_VALIDATION,
+  ERROR_NOT_FOUND,
+  ERROR_AUTH,
+  SALT_ROUND,
+} = require('../utils/constants');
 
 module.exports.getUsers = (req, res) => {
   User.find({})
+    .then((data) => res.send(data))
+    .catch(() => res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' }));
+};
+
+module.exports.getCurrentUser = (req, res) => {
+  const { email } = req.body;
+  User.findOne({ email })
     .then((data) => res.send(data))
     .catch(() => res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' }));
 };
@@ -27,8 +44,15 @@ module.exports.getUserById = (req, res) => {
 };
 
 module.exports.postUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
+  const { email, password } = req.body;
+  if (!validator.isEmail(email)) {
+    return res.status(ERROR_VALIDATION).send({ message: 'Переданан некорректный email' });
+  }
+  return bcrypt.hash(password, SALT_ROUND)
+    .then((hash) => User.create({
+      email,
+      password: hash,
+    }))
     .then((data) => res.send(data))
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -87,5 +111,21 @@ module.exports.updateAvatar = (req, res) => {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемый пользователь не найден' });
       }
       return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
+    });
+};
+
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign(
+        { _id: user._id },
+        'some-secret-key',
+        { expiresIn: '7d' },
+      );
+      res.send({ token });
+    })
+    .catch((err) => {
+      res.status(ERROR_AUTH).send({ message: err.message });
     });
 };
