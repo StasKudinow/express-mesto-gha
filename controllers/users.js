@@ -1,32 +1,35 @@
 const bcrypt = require('bcryptjs');
-const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const { userValidation } = require('../validations/user');
+
+const ValidationError = require('../errors/ValidationError');
+// const NotFoundError = require('../errors/NotFoundError');
+// const ConflictError = require('../errors/ConflictError');
 
 const {
   STATUS_CREATED,
+  STATUS_OK,
   ERROR_SERVER,
   ERROR_VALIDATION,
   ERROR_NOT_FOUND,
-  ERROR_AUTH,
   ERROR_CONFLICT,
   SALT_ROUND,
 } = require('../utils/constants');
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
-    .then((data) => res.send(data))
-    .catch(() => res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' }));
+    .then((data) => res.status(STATUS_OK).send(data))
+    .catch(next);
 };
 
-module.exports.getCurrentUser = (req, res) => {
-  const { email } = req.body;
-  User.findOne({ email })
-    .then((data) => res.send(data))
-    .catch(() => res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' }));
+module.exports.getCurrentUser = (req, res, next) => {
+  User.findOne({})
+    .then((data) => res.status(STATUS_OK).send(data))
+    .catch(next);
 };
 
-module.exports.getUserById = (req, res) => {
+module.exports.getUserById = (req, res, next) => {
   User.findById(req.params.userId)
     .orFail(() => {
       const error = new Error();
@@ -41,34 +44,24 @@ module.exports.getUserById = (req, res) => {
       if (err.statusCode === ERROR_NOT_FOUND) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемый пользователь не найден' });
       }
-      return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
+      return next(err);
     });
 };
 
-module.exports.postUser = (req, res) => {
+module.exports.postUser = (req, res, next) => {
   const {
-    name,
-    about,
-    avatar,
-    email,
-    password,
+    name, about, avatar, email, password,
   } = req.body;
-  if (!validator.isEmail(email) || !password) {
-    return res.status(ERROR_VALIDATION).send({ message: 'Переданан некорректный email или пароль' });
+  const { error } = userValidation(req.body);
+  if (error) {
+    throw new ValidationError('Переданы некорректные данные');
   }
   return bcrypt.hash(password, SALT_ROUND)
     .then((hash) => User.create({
-      name,
-      about,
-      avatar,
-      email,
-      password: hash,
+      name, about, avatar, email, password: hash,
     }))
     .then((user) => {
-      if (!user) {
-        return Promise.reject(new Error());
-      }
-      return res.status(STATUS_CREATED).send({
+      res.status(STATUS_CREATED).send({
         _id: user._id,
         name: user.name,
         about: user.about,
@@ -76,13 +69,20 @@ module.exports.postUser = (req, res) => {
         email: user.email,
       });
     })
-    .catch(() => {
-      res.status(ERROR_CONFLICT).send({ message: 'Пользователь с переданным email уже существует' });
+    .catch((err) => {
+      if (err.code === 11000) {
+        return res.status(ERROR_CONFLICT).send({ message: 'Пользователь с переданным email уже существует' });
+      }
+      return next(err);
     });
 };
 
-module.exports.updateUser = (req, res) => {
+module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
+  const { error } = userValidation(req.body);
+  if (error) {
+    throw new ValidationError('Переданы некорректные данные');
+  }
   User.findByIdAndUpdate(
     req.user._id,
     { name, about },
@@ -91,20 +91,8 @@ module.exports.updateUser = (req, res) => {
       runValidators: true,
     },
   )
-    .orFail(() => {
-      const error = new Error();
-      error.statusCode = ERROR_NOT_FOUND;
-      throw error;
-    })
-    .then((data) => res.send(data))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
-      } if (err.statusCode === ERROR_NOT_FOUND) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемый пользователь не найден' });
-      }
-      return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
-    });
+    .then((data) => res.status(STATUS_OK).send(data))
+    .catch(next);
 };
 
 module.exports.updateAvatar = (req, res) => {
@@ -133,8 +121,12 @@ module.exports.updateAvatar = (req, res) => {
     });
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
+  const { error } = userValidation(req.body);
+  if (error) {
+    throw new ValidationError('Переданы некорректные данные');
+  }
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign(
@@ -144,7 +136,5 @@ module.exports.login = (req, res) => {
       );
       res.send({ token });
     })
-    .catch(() => {
-      res.status(ERROR_AUTH).send({ message: 'Неправильные почта или пароль' });
-    });
+    .catch(next);
 };
