@@ -3,7 +3,6 @@ const Card = require('../models/card');
 const {
   STATUS_CREATED,
   STATUS_OK,
-  ERROR_NOT_FOUND,
 } = require('../utils/constants');
 
 const NotFoundError = require('../errors/NotFoundError');
@@ -23,23 +22,19 @@ module.exports.postCard = (req, res, next) => {
 };
 
 module.exports.deleteCardById = (req, res, next) => {
-  Card.findByIdAndRemove(req.params.cardId)
+  Card.findById(req.params.cardId)
     .populate('owner')
-    .orFail(() => {
-      throw new NotFoundError('Запрашиваемая карточка не найдена');
-    })
     .then((data) => {
+      if (!data) {
+        throw new NotFoundError('Запрашиваемая карточка не найдена');
+      }
       if (data.owner._id.toString() !== req.user._id) {
         throw new ForbiddenError('Нет доступа');
       }
       return res.status(STATUS_OK).send(data);
     })
-    .catch((err) => {
-      if (err.statusCode === ERROR_NOT_FOUND) {
-        return res.status(ERROR_NOT_FOUND).send({ message: err.message });
-      }
-      return next(err);
-    });
+    .then(() => Card.findByIdAndRemove(req.params.cardId))
+    .catch(next);
 };
 
 module.exports.likeCard = (req, res, next) => {
@@ -48,16 +43,13 @@ module.exports.likeCard = (req, res, next) => {
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
-    .orFail(() => {
-      throw new NotFoundError('Запрашиваемая карточка не найдена');
-    })
-    .then((data) => res.status(STATUS_OK).send(data))
-    .catch((err) => {
-      if (err.statusCode === ERROR_NOT_FOUND) {
-        return res.status(ERROR_NOT_FOUND).send({ message: err.message });
+    .then((data) => {
+      if (!data) {
+        throw new NotFoundError('Запрашиваемая карточка не найдена');
       }
-      return next(err);
-    });
+      return res.status(STATUS_OK).send(data);
+    })
+    .catch(next);
 };
 
 module.exports.dislikeCard = (req, res, next) => {
@@ -66,14 +58,11 @@ module.exports.dislikeCard = (req, res, next) => {
     { $pull: { likes: req.user._id } },
     { new: true },
   )
-    .orFail(() => {
-      throw new NotFoundError('Запрашиваемая карточка не найдена');
-    })
-    .then((data) => res.status(STATUS_OK).send(data))
-    .catch((err) => {
-      if (err.statusCode === ERROR_NOT_FOUND) {
-        return res.status(ERROR_NOT_FOUND).send({ message: err.message });
+    .then((data) => {
+      if (!data) {
+        throw new NotFoundError('Запрашиваемая карточка не найдена');
       }
-      return next(err);
-    });
+      return res.status(STATUS_OK).send(data);
+    })
+    .catch(next);
 };

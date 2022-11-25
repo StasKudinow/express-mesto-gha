@@ -5,7 +5,6 @@ const User = require('../models/user');
 const {
   STATUS_CREATED,
   STATUS_OK,
-  ERROR_NOT_FOUND,
   ERROR_CONFLICT,
   SALT_ROUND,
 } = require('../utils/constants');
@@ -28,16 +27,13 @@ module.exports.getCurrentUser = (req, res, next) => {
 
 module.exports.getUserById = (req, res, next) => {
   User.findById(req.params.userId)
-    .orFail(() => {
-      throw new NotFoundError('Запрашиваемый пользователь не найден');
-    })
-    .then((data) => res.status(STATUS_OK).send(data))
-    .catch((err) => {
-      if (err.statusCode === ERROR_NOT_FOUND) {
-        return res.status(ERROR_NOT_FOUND).send({ message: err.message });
+    .then((data) => {
+      if (!data) {
+        throw new NotFoundError('Запрашиваемый пользователь не найден');
       }
-      return next(err);
-    });
+      return res.status(STATUS_OK).send(data);
+    })
+    .catch(next);
 };
 
 module.exports.postUser = (req, res, next) => {
