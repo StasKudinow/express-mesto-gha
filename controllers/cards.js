@@ -1,83 +1,72 @@
 const Card = require('../models/card');
-const { ERROR_SERVER, ERROR_VALIDATION, ERROR_NOT_FOUND } = require('../utils/constants');
 
-module.exports.getCards = (req, res) => {
+const {
+  STATUS_CREATED,
+  STATUS_OK,
+  ERROR_NOT_FOUND,
+} = require('../utils/constants');
+
+const NotFoundError = require('../errors/NotFoundError');
+
+module.exports.getCards = (req, res, next) => {
   Card.find({})
-    .then((data) => res.send(data))
-    .catch(() => res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' }));
+    .then((data) => res.status(STATUS_OK).send(data))
+    .catch(next);
 };
 
-module.exports.postCard = (req, res) => {
+module.exports.postCard = (req, res, next) => {
   const { name, link } = req.body;
   Card.create({ name, link, owner: req.user._id })
-    .then((data) => res.send(data))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
-      }
-      return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
-    });
+    .then((data) => res.status(STATUS_CREATED).send(data))
+    .catch(next);
 };
 
-module.exports.deleteCardById = (req, res) => {
+module.exports.deleteCardById = (req, res, next) => {
   Card.findByIdAndRemove(req.params.cardId)
     .orFail(() => {
-      const error = new Error();
-      error.statusCode = ERROR_NOT_FOUND;
-      throw error;
+      throw new NotFoundError('Запрашиваемая карточка не найдена');
     })
-    .then((data) => res.send(data))
+    .then((data) => res.status(STATUS_OK).send(data))
     .catch((err) => {
-      if (err.name === 'CastError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Передан некорректный id карточки' });
-      }
       if (err.statusCode === ERROR_NOT_FOUND) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемая карточка не найдена' });
+        return res.status(ERROR_NOT_FOUND).send({ message: err.message });
       }
-      return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
+      return next(err);
     });
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
     .orFail(() => {
-      const error = new Error();
-      error.statusCode = ERROR_NOT_FOUND;
-      throw error;
+      throw new NotFoundError('Запрашиваемая карточка не найдена');
     })
-    .then((data) => res.send(data))
+    .then((data) => res.status(STATUS_OK).send(data))
     .catch((err) => {
-      if (err.name === 'CastError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Передан некорректный id карточки' });
-      } if (err.statusCode === ERROR_NOT_FOUND) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемая карточка не найдена' });
+      if (err.statusCode === ERROR_NOT_FOUND) {
+        return res.status(ERROR_NOT_FOUND).send({ message: err.message });
       }
-      return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
+      return next(err);
     });
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true },
   )
     .orFail(() => {
-      const error = new Error();
-      error.statusCode = ERROR_NOT_FOUND;
-      throw error;
+      throw new NotFoundError('Запрашиваемая карточка не найдена');
     })
-    .then((data) => res.send(data))
+    .then((data) => res.status(STATUS_OK).send(data))
     .catch((err) => {
-      if (err.name === 'CastError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Передан некорректный id карточки' });
-      } if (err.statusCode === ERROR_NOT_FOUND) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемая карточка не найдена' });
+      if (err.statusCode === ERROR_NOT_FOUND) {
+        return res.status(ERROR_NOT_FOUND).send({ message: err.message });
       }
-      return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
+      return next(err);
     });
 };

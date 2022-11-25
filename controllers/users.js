@@ -10,6 +10,8 @@ const {
   SALT_ROUND,
 } = require('../utils/constants');
 
+const NotFoundError = require('../errors/NotFoundError');
+
 module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((data) => res.status(STATUS_OK).send(data))
@@ -27,14 +29,12 @@ module.exports.getCurrentUser = (req, res, next) => {
 module.exports.getUserById = (req, res, next) => {
   User.findById(req.params.userId)
     .orFail(() => {
-      const error = new Error();
-      error.statusCode = ERROR_NOT_FOUND;
-      throw error;
+      throw new NotFoundError('Запрашиваемый пользователь не найден');
     })
     .then((data) => res.status(STATUS_OK).send(data))
     .catch((err) => {
       if (err.statusCode === ERROR_NOT_FOUND) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемый пользователь не найден' });
+        return res.status(ERROR_NOT_FOUND).send({ message: err.message });
       }
       return next(err);
     });
