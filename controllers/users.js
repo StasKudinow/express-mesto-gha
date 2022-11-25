@@ -1,9 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const validator = require('validator');
 const User = require('../models/user');
-
-const ValidationError = require('../errors/ValidationError');
 
 const {
   STATUS_CREATED,
@@ -45,15 +42,17 @@ module.exports.postUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
-  if (!validator.isEmail(email)) {
-    throw new ValidationError('Передан некорректный email');
-  }
   return bcrypt.hash(password, SALT_ROUND)
     .then((hash) => User.create({
       name, about, avatar, email, password: hash,
     }))
     .then((user) => {
-      res.status(STATUS_CREATED).send(user);
+      res.status(STATUS_CREATED).send({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        email: user.email,
+      });
     })
     .catch((err) => {
       if (err.code === 11000) {
@@ -93,9 +92,6 @@ module.exports.updateAvatar = (req, res, next) => {
 
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
-  if (!validator.isEmail(email)) {
-    throw new ValidationError('Передан некорректный email');
-  }
   return User.findUserByCredentials(email, password)
     .then((user) => {
       const token = jwt.sign(
