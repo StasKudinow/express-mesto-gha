@@ -5,6 +5,7 @@ const ERROR_VALIDATION = 400;
 const ERROR_NOT_FOUND = 404;
 const ERROR_AUTH = 401;
 const ERROR_CONFLICT = 409;
+const ERROR_FORBIDDEN = 403;
 const SALT_ROUND = 10;
 
 module.exports = {
@@ -15,5 +16,6 @@ module.exports = {
   ERROR_NOT_FOUND,
   ERROR_AUTH,
   ERROR_CONFLICT,
+  ERROR_FORBIDDEN,
   SALT_ROUND,
 };

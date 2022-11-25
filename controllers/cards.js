@@ -7,6 +7,7 @@ const {
 } = require('../utils/constants');
 
 const NotFoundError = require('../errors/NotFoundError');
+const ForbiddenError = require('../errors/ForbiddenError');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
@@ -23,10 +24,16 @@ module.exports.postCard = (req, res, next) => {
 
 module.exports.deleteCardById = (req, res, next) => {
   Card.findByIdAndRemove(req.params.cardId)
+    .populate('owner')
     .orFail(() => {
       throw new NotFoundError('Запрашиваемая карточка не найдена');
     })
-    .then((data) => res.status(STATUS_OK).send(data))
+    .then((data) => {
+      if (data.owner._id.toString() !== req.user._id) {
+        throw new ForbiddenError('Нет доступа');
+      }
+      return res.status(STATUS_OK).send(data);
+    })
     .catch((err) => {
       if (err.statusCode === ERROR_NOT_FOUND) {
         return res.status(ERROR_NOT_FOUND).send({ message: err.message });

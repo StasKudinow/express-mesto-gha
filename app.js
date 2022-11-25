@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const { errors } = require('celebrate');
 
-const { ERROR_NOT_FOUND } = require('./utils/constants');
+const { ERROR_SERVER, ERROR_NOT_FOUND } = require('./utils/constants');
 const { login, postUser } = require('./controllers/users');
 const { userBodyValidator } = require('./validators/user-validators');
 
@@ -35,11 +35,11 @@ app.all('*', (req, res, next) => {
 app.use(errors());
 
 app.use((err, req, res, next) => {
-  const { statusCode = 500, message } = err;
+  const { statusCode = ERROR_SERVER, message } = err;
   res
     .status(statusCode)
     .send({
-      message: statusCode === 500
+      message: statusCode === ERROR_SERVER
         ? 'На сервере произошла ошибка'
         : message,
     });
