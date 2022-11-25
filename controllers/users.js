@@ -1,17 +1,13 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const validator = require('validator');
 const User = require('../models/user');
-const { userValidation } = require('../validations/user');
 
 const ValidationError = require('../errors/ValidationError');
-// const NotFoundError = require('../errors/NotFoundError');
-// const ConflictError = require('../errors/ConflictError');
 
 const {
   STATUS_CREATED,
   STATUS_OK,
-  ERROR_SERVER,
-  ERROR_VALIDATION,
   ERROR_NOT_FOUND,
   ERROR_CONFLICT,
   SALT_ROUND,
@@ -36,11 +32,8 @@ module.exports.getUserById = (req, res, next) => {
       error.statusCode = ERROR_NOT_FOUND;
       throw error;
     })
-    .then((data) => res.send(data))
+    .then((data) => res.status(STATUS_OK).send(data))
     .catch((err) => {
-      if (err.name === 'CastError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Передан некорректный id пользователя' });
-      }
       if (err.statusCode === ERROR_NOT_FOUND) {
         return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемый пользователь не найден' });
       }
@@ -52,22 +45,15 @@ module.exports.postUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
-  const { error } = userValidation(req.body);
-  if (error) {
-    throw new ValidationError('Переданы некорректные данные');
+  if (!validator.isEmail(email)) {
+    throw new ValidationError('Передан некорректный email');
   }
   return bcrypt.hash(password, SALT_ROUND)
     .then((hash) => User.create({
       name, about, avatar, email, password: hash,
     }))
     .then((user) => {
-      res.status(STATUS_CREATED).send({
-        _id: user._id,
-        name: user.name,
-        about: user.about,
-        avatar: user.avatar,
-        email: user.email,
-      });
+      res.status(STATUS_CREATED).send(user);
     })
     .catch((err) => {
       if (err.code === 11000) {
@@ -79,10 +65,6 @@ module.exports.postUser = (req, res, next) => {
 
 module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
-  const { error } = userValidation(req.body);
-  if (error) {
-    throw new ValidationError('Переданы некорректные данные');
-  }
   User.findByIdAndUpdate(
     req.user._id,
     { name, about },
@@ -95,7 +77,7 @@ module.exports.updateUser = (req, res, next) => {
     .catch(next);
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   User.findByIdAndUpdate(
     req.user._id,
@@ -105,27 +87,14 @@ module.exports.updateAvatar = (req, res) => {
       runValidators: true,
     },
   )
-    .orFail(() => {
-      const error = new Error();
-      error.statusCode = ERROR_NOT_FOUND;
-      throw error;
-    })
-    .then((data) => res.send(data))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return res.status(ERROR_VALIDATION).send({ message: 'Переданы некорректные данные' });
-      } if (err.statusCode === ERROR_NOT_FOUND) {
-        return res.status(ERROR_NOT_FOUND).send({ message: 'Запрашиваемый пользователь не найден' });
-      }
-      return res.status(ERROR_SERVER).send({ message: 'Неизвестная ошибка' });
-    });
+    .then((data) => res.status(STATUS_OK).send(data))
+    .catch(next);
 };
 
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
-  const { error } = userValidation(req.body);
-  if (error) {
-    throw new ValidationError('Переданы некорректные данные');
+  if (!validator.isEmail(email)) {
+    throw new ValidationError('Передан некорректный email');
   }
   return User.findUserByCredentials(email, password)
     .then((user) => {
@@ -134,7 +103,7 @@ module.exports.login = (req, res, next) => {
         'some-secret-key',
         { expiresIn: '7d' },
       );
-      res.send({ token });
+      res.status(STATUS_OK).send({ token });
     })
     .catch(next);
 };
