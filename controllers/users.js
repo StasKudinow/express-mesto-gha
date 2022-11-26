@@ -56,7 +56,7 @@ module.exports.postUser = (req, res, next) => {
         return res.status(ERROR_CONFLICT).send({ message: 'Пользователь с переданным email уже существует' });
       }
       if (err.statusCode === ERROR_VALIDATION) {
-        next(new ValidationError('Некорректные данные при создании карточки'));
+        next(new ValidationError('Переданы некорректные данные'));
       }
       return next(err);
     });
@@ -75,7 +75,7 @@ module.exports.updateUser = (req, res, next) => {
     .then((data) => res.send({ data }))
     .catch((err) => {
       if (err.statusCode === ERROR_VALIDATION) {
-        next(new ValidationError('Некорректные данные при создании карточки'));
+        next(new ValidationError('Переданы некорректные данные'));
       }
       return next(err);
     });
@@ -94,7 +94,7 @@ module.exports.updateAvatar = (req, res, next) => {
     .then((data) => res.send({ data }))
     .catch((err) => {
       if (err.statusCode === ERROR_VALIDATION) {
-        next(new ValidationError('Некорректные данные при создании карточки'));
+        next(new ValidationError('Переданы некорректные данные'));
       }
       return next(err);
     });
