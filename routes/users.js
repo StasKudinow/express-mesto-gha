@@ -6,7 +6,7 @@ const {
 
 const {
   userParamsValidator, userNameAndAboutValidator, userAvatarValidator,
-} = require('../validators/user-validators');
+} = require('../middlewares/validators/user-validators');
 
 router.get('/users', getUsers);
 

@@ -13,7 +13,7 @@
     "type": "git",
     "url": "git+https://github.com/StasKudinow/express-mesto-gha.git"
   },
-  "author": "",
+  "author": "Stas Kudinov <staskudinow@yandex.ru> (https://github.com/StasKudinow)",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/StasKudinow/express-mesto-gha/issues"

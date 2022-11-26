@@ -4,24 +4,23 @@ const User = require('../models/user');
 
 const {
   STATUS_CREATED,
-  STATUS_OK,
+  ERROR_VALIDATION,
   ERROR_CONFLICT,
   SALT_ROUND,
 } = require('../utils/constants');
 
+const ValidationError = require('../errors/ValidationError');
 const NotFoundError = require('../errors/NotFoundError');
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
-    .then((data) => res.status(STATUS_OK).send(data))
+    .then((data) => res.send({ data }))
     .catch(next);
 };
 
 module.exports.getCurrentUser = (req, res, next) => {
   User.findById(req.user._id)
-    .then((data) => {
-      res.status(STATUS_OK).send(data);
-    })
+    .then((data) => res.send({ data }))
     .catch(next);
 };
 
@@ -31,7 +30,7 @@ module.exports.getUserById = (req, res, next) => {
       if (!data) {
         throw new NotFoundError('Запрашиваемый пользователь не найден');
       }
-      return res.status(STATUS_OK).send(data);
+      return res.send({ data });
     })
     .catch(next);
 };
@@ -56,6 +55,9 @@ module.exports.postUser = (req, res, next) => {
       if (err.code === 11000) {
         return res.status(ERROR_CONFLICT).send({ message: 'Пользователь с переданным email уже существует' });
       }
+      if (err.statusCode === ERROR_VALIDATION) {
+        throw new ValidationError('Некорректные данные при создании карточки');
+      }
       return next(err);
     });
 };
@@ -70,8 +72,13 @@ module.exports.updateUser = (req, res, next) => {
       runValidators: true,
     },
   )
-    .then((data) => res.status(STATUS_OK).send(data))
-    .catch(next);
+    .then((data) => res.send({ data }))
+    .catch((err) => {
+      if (err.statusCode === ERROR_VALIDATION) {
+        throw new ValidationError('Некорректные данные при создании карточки');
+      }
+      return next(err);
+    });
 };
 
 module.exports.updateAvatar = (req, res, next) => {
@@ -84,8 +91,13 @@ module.exports.updateAvatar = (req, res, next) => {
       runValidators: true,
     },
   )
-    .then((data) => res.status(STATUS_OK).send(data))
-    .catch(next);
+    .then((data) => res.send({ data }))
+    .catch((err) => {
+      if (err.statusCode === ERROR_VALIDATION) {
+        throw new ValidationError('Некорректные данные при создании карточки');
+      }
+      return next(err);
+    });
 };
 
 module.exports.login = (req, res, next) => {
@@ -97,7 +109,7 @@ module.exports.login = (req, res, next) => {
         'some-secret-key',
         { expiresIn: '7d' },
       );
-      res.status(STATUS_OK).send({ token });
+      res.send({ token });
     })
     .catch(next);
 };

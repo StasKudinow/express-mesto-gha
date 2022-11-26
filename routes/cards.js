@@ -1,6 +1,6 @@
 const router = require('express').Router();
 
-const { cardBodyValidator, cardParamsValidator } = require('../validators/card-validators');
+const { cardBodyValidator, cardParamsValidator } = require('../middlewares/validators/card-validators');
 
 const {
   getCards, postCard, deleteCardById, likeCard, dislikeCard,
