@@ -22,7 +22,7 @@ module.exports.postCard = (req, res, next) => {
     .then((data) => res.status(STATUS_CREATED).send({ data }))
     .catch((err) => {
       if (err.statusCode === ERROR_VALIDATION) {
-        next(new ValidationError('Переданы некорректные данные'));
+        return next(new ValidationError('Переданы некорректные данные'));
       }
       return next(err);
     });
