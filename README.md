@@ -18,5 +18,3 @@
 ## Ссылка на репозиторий
 
 https://github.com/StasKudinow/express-mesto-gha
-
-(test)
