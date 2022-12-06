@@ -3,7 +3,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const helmet = require('helmet');
 const { errors } = require('celebrate');
 
 const router = require('./routes/index');
@@ -17,7 +16,7 @@ const app = express();
 const options = {
   origin: [
     'http://localhost:3010',
-    // 'http://staskudinow.mesto.nomoredomains.club',
+    'http://staskudinow.mesto.nomoredomains.club',
     'https://staskudinow.mesto.nomoredomains.club',
     'https://staskudinow.github.io',
   ],
@@ -29,8 +28,6 @@ const options = {
 };
 
 app.use('*', cors(options));
-
-app.use(helmet());
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
