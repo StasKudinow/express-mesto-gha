@@ -14,8 +14,6 @@ const { DB_ADDRESS } = require('./utils/constants');
 const { PORT = 3000 } = process.env;
 const app = express();
 
-app.use(helmet());
-
 const options = {
   origin: [
     'http://localhost:3010',
@@ -31,6 +29,8 @@ const options = {
 };
 
 app.use('*', cors(options));
+
+app.use(helmet());
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
