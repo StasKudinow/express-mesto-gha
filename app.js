@@ -3,6 +3,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const helmet = require('helmet');
 const { errors } = require('celebrate');
 
 const router = require('./routes/index');
@@ -12,6 +13,8 @@ const { DB_ADDRESS } = require('./utils/constants');
 
 const { PORT = 3000 } = process.env;
 const app = express();
+
+app.use(helmet({ crossOriginEmbedderPolicy: true }));
 
 const options = {
   origin: [
