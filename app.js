@@ -17,7 +17,7 @@ const app = express();
 const options = {
   origin: [
     'http://localhost:3010',
-    'http://staskudinow.mesto.nomoredomains.club',
+    // 'http://staskudinow.mesto.nomoredomains.club',
     'https://staskudinow.mesto.nomoredomains.club',
     'https://staskudinow.github.io',
   ],
@@ -30,7 +30,7 @@ const options = {
 
 app.use('*', cors(options));
 
-// app.use(helmet());
+app.use(helmet());
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
