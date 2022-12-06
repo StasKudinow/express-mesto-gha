@@ -14,7 +14,7 @@ const { DB_ADDRESS } = require('./utils/constants');
 const { PORT = 3000 } = process.env;
 const app = express();
 
-app.use(helmet({ crossOriginEmbedderPolicy: true }));
+app.use(helmet({ crossOriginEmbedderPolicy: false }));
 
 const options = {
   origin: [
